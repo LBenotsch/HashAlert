@@ -1,0 +1,24 @@
+# Use '#' for commented lines
+
+# Miner location name (ex. 'Home'), (this will display in the subject of the alert email).
+locationName=Home
+
+# URL to your ethdistro webpage (ex. http://1b9f67.ethosdistro.com/).
+webPage=
+
+# Set value to how many x minutes to refresh megahash data.
+refreshMin=30
+
+# First recipient email address (ex. bobjoe@somedomain.com).
+# If no second email, leave blank.
+recipient1=
+recipient2=
+
+# Gmail address where emails are sent from. (Use a current or create one spcifically for this application)
+# (ex. bobjoe@gmail.com)
+emailSender=
+emailSenderPass=
+
+# If MH/s goes below x value, throw error and send email.
+# Do not enter decimals, and no negative values.
+errorMinimum=0
