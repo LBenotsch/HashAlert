@@ -7,7 +7,7 @@ locationName=Home
 webPage=
 
 # Set value to how many x minutes to refresh megahash data.
-refreshMin=30
+refreshMin=10
 
 # First recipient email address (ex. bobjoe@somedomain.com).
 # If no second email, leave blank.

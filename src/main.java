@@ -22,7 +22,7 @@ public class main {
     	String strErrorMinimum = "";
     	String locationName = "";
     	
-    	int rigCount = 0;
+    	//int rigCount = 0;
     	int rigError = 0;
         int rigNumber = 0;
     	//int resumeAlert = 0;
@@ -89,29 +89,28 @@ public class main {
 			System.out.println("No rigs found on the webpage provided. Check config. Exiting...");
 			System.exit(0);
 		}
-	    ArrayList<String> ar1 = new ArrayList<String>();
+		//Assign initial rignames and get megahash from ethdistro JSON data
 	    while (iterator1.hasNext()) {
 	    	   String key = (String)iterator1.next();
-	    	   ar1.add(key);
+	    	   if (json1.getJSONObject("rigs").getJSONObject(key).getString("condition").equals("mining")) { //get only rigs under the condition "mining"
+	    		   rigName.add(key);
+	    		   rigMegaHash.add(Double.parseDouble(json1.getJSONObject("rigs").getJSONObject(key).getString("hash")));
+	    		   rigIp.add(json1.getJSONObject("rigs").getJSONObject(key).getString("ip"));
+	    	   }
 	    	}
-	    rigCount = ar1.size(); //Get number of Rigs being used
-	    if (rigCount == 0) {
-	    	System.out.println("Error, no rigs found on provided EthDistro webpage.");
+	    //rigCount = rigName.size(); //Get number of total rigs
+	    if (rigName.size() == 0) {
+	    	System.out.println("No rigs found on provided EthDistro webpage. Exiting...");
 	    	System.exit(0);
-	    }
-	    //Assign initial rignames and get megahash from ethdistro JSON data
-	    for (int i=rigCount; i>0 ; i--) {
-	    	rigName.add(ar1.get(i-1));
-	    	rigMegaHash.add(Double.parseDouble(json1.getJSONObject("rigs").getJSONObject(ar1.get(i-1)).getString("hash")));
-	    	rigIp.add(json1.getJSONObject("rigs").getJSONObject(ar1.get(i-1)).getString("ip"));
-	    }
+	    }	    
     	
     	//Display properties to console
     	System.out.println("--Welcome to the HashAlert Application--");
     	System.out.println("Pointing to: "+webPage);
     	System.out.println("Monitored Rigs:");
+		System.out.println("Note: Ignoring all 'unreachable' rigs.");
     	rigNumber = 0;
-    	for (int i=rigCount; i>0 ; i--) {
+    	for (int i=rigName.size(); i>0 ; i--) {
     		rigNumber++;
     		System.out.println("  Rig"+rigNumber+": "+rigName.get(i-1)+" ("+rigIp.get(i-1)+")");
     	}
@@ -123,37 +122,35 @@ public class main {
 			//Get rig names from ethdistro JSON data
 			JSONObject json = importJSON.readJsonFromUrl(webPage+"/?json=yes");
 		    Iterator<?> iterator = json.getJSONObject("rigs").keys();
-		    ArrayList<String> ar = new ArrayList<String>();
-		    while (iterator.hasNext()) {
-		    	   String key = (String)iterator.next();
-		    	   ar.add(key);
-		    	}
-		    rigCount = ar.size(); //Get number of Rigs being used
-		    
 		    //Assign rignames and get megahash from ethdistro JSON data
 		    rigName.clear();
 		    rigMegaHash.clear();
 		    rigIp.clear();
-		    for (int i=rigCount; i>0 ; i--) {
-		    	rigName.add(ar.get(i-1));
-		    	rigMegaHash.add(Double.parseDouble(json.getJSONObject("rigs").getJSONObject(ar.get(i-1)).getString("hash")));
-		    	rigIp.add(json.getJSONObject("rigs").getJSONObject(ar.get(i-1)).getString("ip"));
-		    }
+		    while (iterator.hasNext()) {
+		    	   String key = (String)iterator.next();
+		    	   if (json.getJSONObject("rigs").getJSONObject(key).getString("condition").equals("mining")) { //get only rigs under the condition "mining"
+		    		   rigName.add(key);
+		    		   rigMegaHash.add(Double.parseDouble(json.getJSONObject("rigs").getJSONObject(key).getString("hash")));
+		    		   rigIp.add(json.getJSONObject("rigs").getJSONObject(key).getString("ip"));
+		    	   }
+		    	}
+		    //rigCount = rigName.size(); //Get number of total Rigs
+		    
 	        //Get Current Date/Time
 	        Date now = new Date();
 	        System.out.println("\nMiner Status - "+locationName);
 	        System.out.println("As of: "+now);
 	        //Display data in console
 	        rigNumber = 0;
-	        for (int i=rigCount; i>0 ; i--) {
+	        for (int i=rigName.size(); i>0 ; i--) {
 	        	rigNumber++;
 	    		System.out.println("Rig"+rigNumber+": "+rigName.get(i-1)+" ("+rigIp.get(i-1)+")....."+rigMegaHash.get(i-1)+" MH/s");
 	    	}
 	        System.out.println("Using global minimum of: "+errorMinimum);
 	        //Error handling
 	        rigNumber = 0;
-	        for (int i=rigMegaHash.size(); i>0 ; i--) {
-		        if (rigMegaHash.get(i-1) < errorMinimum) {
+	        for (int i=rigName.size(); i>0 ; i--) {
+		        if (rigMegaHash.get(i-1) <= errorMinimum) {
 		        	rigNumber++;
 		        	rigError++;
 		        	System.out.println("ALERT! Rig"+rigNumber+"("+rigName.get(i-1)+") has dropped below "+errorMinimum+" MH/s. It is currently: "+rigMegaHash.get(i-1)+" MH/s");
@@ -174,7 +171,7 @@ public class main {
 	            body = "Miner Status:\n"+
 	            	   "As of: "+now+"\n\n";
 	            rigNumber = 0;
-	            for (int i=rigCount; i>0 ; i--) {
+	            for (int i=rigName.size(); i>0 ; i--) {
 	            	rigNumber++;
 	            	body +="Rig"+rigNumber+": "+rigName.get(i-1)+" ("+rigIp.get(i-1)+")......."+rigMegaHash.get(i-1)+" MH/s\n";
 	            }
