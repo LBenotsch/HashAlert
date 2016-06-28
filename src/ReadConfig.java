@@ -103,7 +103,7 @@ public class ReadConfig {
 								"recipient1="+System.lineSeparator()+
 								"recipient2="+System.lineSeparator()+
 								System.lineSeparator()+
-								"# Gmail address where emails are sent from. (Use a current or create one spcifically for this application)"+System.lineSeparator()+
+								"# Gmail address where emails are sent from. (Use a current or create one specifically for this application)"+System.lineSeparator()+
 								"# (ex. bobjoe@gmail.com)"+System.lineSeparator()+
 								"emailSender="+System.lineSeparator()+
 								"emailSenderPass="+System.lineSeparator()+

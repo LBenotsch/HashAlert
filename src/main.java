@@ -1,9 +1,11 @@
+import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class main {
@@ -22,7 +24,8 @@ public class main {
     	String strErrorMinimum = "";
     	String locationName = "";
     	
-    	//int rigCount = 0;
+    	int rigCountLast = 0;
+    	int rigCountCurrent = 0;
     	int rigError = 0;
         int rigNumber = 0;
     	//int resumeAlert = 0;
@@ -80,25 +83,35 @@ public class main {
     	int errorMinimum = Integer.parseInt(strErrorMinimum);
     	
     	//Get initial rig names from ethdistro JSON data
-		JSONObject json1 = null;
-		Iterator<?> iterator1 = null;
+		JSONObject initialJSON = null;
+		Iterator<?> initialIterator = null;
 		try {
-			json1 = importJSON.readJsonFromUrl(webPage+"/?json=yes");
-			iterator1 = json1.getJSONObject("rigs").keys();
+			initialJSON = importJSON.readJsonFromUrl(webPage+"/?json=yes");
+			//initialJSON = importJSON.readJsonFromUrl(webPage);
+			initialIterator = initialJSON.getJSONObject("rigs").keys();
 		} catch (Exception e) {
 			System.out.println("No rigs found on the webpage provided. Check config. Exiting...");
 			System.exit(0);
 		}
 		//Assign initial rignames and get megahash from ethdistro JSON data
-	    while (iterator1.hasNext()) {
-	    	   String key = (String)iterator1.next();
-	    	   if (json1.getJSONObject("rigs").getJSONObject(key).getString("condition").equals("mining")) { //get only rigs under the condition "mining"
-	    		   rigName.add(key);
-	    		   rigMegaHash.add(Double.parseDouble(json1.getJSONObject("rigs").getJSONObject(key).getString("hash")));
-	    		   rigIp.add(json1.getJSONObject("rigs").getJSONObject(key).getString("ip"));
-	    	   }
+		ArrayList<String> initialAL = new ArrayList<String>();
+	    while (initialIterator.hasNext()) {
+	    	   String key = (String)initialIterator.next();
+	    	   initialAL.add(key);
 	    	}
-	    //rigCount = rigName.size(); //Get number of total rigs
+	    for (int i=initialAL.size(); i>0; i--) {
+	    	if (initialJSON.getJSONObject("rigs").getJSONObject(initialAL.get(i-1)).getString("condition").equals("unreachable")) {
+	    		initialJSON.getJSONObject("rigs").remove(initialAL.get(i-1));
+	    	}else{
+	    		rigName.add(initialAL.get(i-1));
+	 		   	try {
+					rigMegaHash.add(Double.parseDouble(initialJSON.getJSONObject("rigs").getJSONObject(initialAL.get(i-1)).getString("hash")));
+				} catch (JSONException e) {
+					rigMegaHash.add((double) 0);
+				}
+	 		   	rigIp.add(initialJSON.getJSONObject("rigs").getJSONObject(initialAL.get(i-1)).getString("ip"));
+	    	}
+	    }
 	    if (rigName.size() == 0) {
 	    	System.out.println("No rigs found on provided EthDistro webpage. Exiting...");
 	    	System.exit(0);
@@ -121,21 +134,33 @@ public class main {
 		while (rigError < 2) {
 			//Get rig names from ethdistro JSON data
 			JSONObject json = importJSON.readJsonFromUrl(webPage+"/?json=yes");
-		    Iterator<?> iterator = json.getJSONObject("rigs").keys();
+			//JSONObject json = importJSON.readJsonFromUrl(webPage);
+		    Iterator<?> iterator = json.getJSONObject("rigs").keys();   
 		    //Assign rignames and get megahash from ethdistro JSON data
+		    rigCountLast = rigName.size();
 		    rigName.clear();
 		    rigMegaHash.clear();
 		    rigIp.clear();
+			ArrayList<String> AL = new ArrayList<String>();
 		    while (iterator.hasNext()) {
 		    	   String key = (String)iterator.next();
-		    	   if (json.getJSONObject("rigs").getJSONObject(key).getString("condition").equals("mining")) { //get only rigs under the condition "mining"
-		    		   rigName.add(key);
-		    		   rigMegaHash.add(Double.parseDouble(json.getJSONObject("rigs").getJSONObject(key).getString("hash")));
-		    		   rigIp.add(json.getJSONObject("rigs").getJSONObject(key).getString("ip"));
-		    	   }
+		    	   AL.add(key);
+		    	} 
+		    for (int i=initialAL.size(); i>0; i--) {
+		    	if (json.getJSONObject("rigs").getJSONObject(AL.get(i-1)).getString("condition").equals("unreachable")) {
+		    		json.getJSONObject("rigs").remove(AL.get(i-1));
+		    	}else{
+		    		rigName.add(AL.get(i-1));
+		 		   	try {
+						rigMegaHash.add(Double.parseDouble(json.getJSONObject("rigs").getJSONObject(AL.get(i-1)).getString("hash")));
+					} catch (JSONException e) {
+						rigMegaHash.add((double) 0);
+					}
+		 		   	rigIp.add(json.getJSONObject("rigs").getJSONObject(AL.get(i-1)).getString("ip"));
 		    	}
-		    //rigCount = rigName.size(); //Get number of total Rigs
-		    
+		    }
+		    rigCountCurrent = rigName.size();
+
 	        //Get Current Date/Time
 	        Date now = new Date();
 	        System.out.println("\nMiner Status - "+locationName);
@@ -160,8 +185,37 @@ public class main {
 	        	System.out.println("Detected error in one or more miners. Refreshing in 5 seconds to confirm...");
 	        	TimeUnit.SECONDS.sleep(5);
 	        }*/
+	        //If a monitored rig becomes unreachable, increment rigError.
+		    if (rigCountCurrent < rigCountLast) {
+		    	rigError += rigCountLast - rigCountCurrent;
+		    	System.out.println("ALERT! "+rigError+" Miner(s) is unreachable!");
+		    }
+		    
 	        //When an error has been detected, send an alert email
 	        if (rigError > 0){
+	        	//Get rig names from ethdistro JSON data
+				JSONObject finalJSON = importJSON.readJsonFromUrl(webPage+"/?json=yes");
+				//JSONObject finalJSON = importJSON.readJsonFromUrl(webPage);
+			    Iterator<?> finalIterator = finalJSON.getJSONObject("rigs").keys();   
+			    //Assign rignames and get megahash from ethdistro JSON data
+			    rigName.clear();
+			    rigMegaHash.clear();
+			    rigIp.clear();
+				ArrayList<String> finalAL = new ArrayList<String>();
+			    while (finalIterator.hasNext()) {
+			    	   String key = (String)finalIterator.next();
+			    	   finalAL.add(key);
+			    	} 
+			    for (int i=finalAL.size(); i>0; i--) {
+			    		rigName.add(finalAL.get(i-1));
+			 		   	try {
+							rigMegaHash.add(Double.parseDouble(finalJSON.getJSONObject("rigs").getJSONObject(finalAL.get(i-1)).getString("hash")));
+						} catch (JSONException e) {
+							rigMegaHash.add((double) 0);
+						}
+			 		   	rigIp.add(finalJSON.getJSONObject("rigs").getJSONObject(finalAL.get(i-1)).getString("ip"));
+			    }
+	        	
 	            String[] to = {recipient1, recipient2};
 	            if (to[1].equals("")){
 	            	to = new String[] {recipient1};

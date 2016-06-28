@@ -7,14 +7,14 @@ locationName=Home
 webPage=
 
 # Set value to how many x minutes to refresh megahash data.
-refreshMin=10
+refreshMin=
 
 # First recipient email address (ex. bobjoe@somedomain.com).
 # If no second email, leave blank.
 recipient1=
 recipient2=
 
-# Gmail address where emails are sent from. (Use a current or create one spcifically for this application)
+# Gmail address where emails are sent from. (Use a current or create one specifically for this application)
 # (ex. bobjoe@gmail.com)
 emailSender=
 emailSenderPass=
