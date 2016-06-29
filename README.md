@@ -18,3 +18,9 @@ pause
 ```
 #### Requirements
 Java 7 or higher
+
+#### Allowing 3rd Party App Access in Google Mail
+By default, gmail will turn off access to "less secure apps".
+Go here while logged in and select "turn on": https://www.google.com/settings/security/lesssecureapps
+
+This will allow email alerts to continue without error within HashAlert. It's recommended to preform an email test by forcing an error. An easy way to do this is to change the "errorMinimum" value to something high (ex. 999), then running the application.
